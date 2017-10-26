@@ -1,48 +1,22 @@
 require 'net/http'
 require 'pry'
 require 'json'
+require_relative 'helpermodule'
+require_relative 'repomodule'
+
 # require 'nbayes'
 # ask for username and use in request
-print 'Enter a username: '
-username = gets.strip
+# print 'Enter a username: '
+# username = gets.strip
 
-url = URI.parse("https://api.github.com/users/#{username}/starred")
-req = Net::HTTP::Get.new(url.to_s)
-http = Net::HTTP.new(url.host, url.port)
-http.use_ssl = (url.scheme == 'https')
-response = http.request(req)
+username = 'RobPando'
 
-starred = JSON.parse(response.body)
+my_starred_repos_response = HelperModule.get_repos("https://api.github.com/users/#{username}/starred")
+my_starred_repos = RepoModule.get_trainable_params(my_starred_repos_response, true)
 
-# if response[Link] rel=\next\ keep going to fetch data
+random_repos_response = HelperModule.get_repos("https://api.github.com/search/repositories?q=created:>2017-01-01 stars:>=10000")
+random_repos = RepoModule.get_trainable_params(random_repos_response['items'])
 
-response_has_next = response['Link'] =~ /next/
+training_set = RepoModule.create_training_set(my_starred_repos, random_repos)
 
-while response_has_next
-  url = URI.parse(response['Link'].split(';').first.tr('<>', ''))
-  req = Net::HTTP::Get.new(url.to_s)
-  http = Net::HTTP.new(url.host, url.port)
-  http.use_ssl = (url.scheme == 'https')
-  response = http.request(req)
-  starred += JSON.parse(response.body)
-
-  response_has_next = response['Link'] =~ /next/
-end
-
-repos = []
-starred.each do |repo|
-  description = if repo['description']
-                  repo['description'].split(' ').reject do |d|
-                    d.length == 1
-                  end.join(' ')
-                else
-                  repo['description']
-                end
-
-  repos.push(
-    description: description,
-    language: repo['language']
-  )
-end
-puts repos
-# puts response
+binding.pry
