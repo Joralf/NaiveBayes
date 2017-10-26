@@ -1,9 +1,13 @@
 require 'net/http'
+require 'yaml'
 
 module HelperModule
   def self.get_repos(url_str, all = true)
+    secrets = YAML.load_file('secrets.yml')
+    username, token = secrets["username"], secrets["token"]
     url = URI(url_str)
     req = Net::HTTP::Get.new(url.to_s)
+    req.basic_auth username, token
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = (url.scheme == 'https')
     response = http.request(req)
@@ -17,6 +21,7 @@ module HelperModule
     while response_has_next
       url = URI.parse(response['Link'].split(';').first.tr('<>', ''))
       req = Net::HTTP::Get.new(url.to_s)
+      req.basic_auth username, token
       http = Net::HTTP.new(url.host, url.port)
       http.use_ssl = (url.scheme == 'https')
       response = http.request(req)
