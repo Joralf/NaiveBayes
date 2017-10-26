@@ -4,9 +4,8 @@ require 'json'
 require_relative 'helpermodule'
 require_relative 'repomodule'
 require 'highline'
-
-# require 'nbayes'
-# ask for username and use in request
+require 'yaml'
+require 'nbayes'
 
 username, year, stars = HelperModule.questionnaire
 
