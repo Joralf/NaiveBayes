@@ -1,5 +1,3 @@
-require 'highline'
-
 module RepoModule
   def self.get_trainable_params(repos, would_star = nil)
     result = []
