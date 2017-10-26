@@ -36,27 +36,41 @@ end
 include RepoModule
 
 suggestions = 'y'
-next_page = true
 current_url = "https://api.github.com/search/repositories?q=created:>#{year}-01-01 stars:>=#{stars}"
 
-while suggestions == 'y' && next_page
-  repos_response = HelperModule.get_repos(current_url, false)
-  repos = RepoModule.get_trainable_params(repos_response['items'])
+while (suggestions === 'y' && !current_url.nil?)
+  secrets = YAML.load_file('secrets.yml')
+  username, token = secrets["username"], secrets["token"]
 
-  repos.reject do |repo|
+  url = URI.parse(current_url)
+  req = Net::HTTP::Get.new(url.to_s)
+  req.basic_auth username, token
+  http = Net::HTTP.new(url.host, url.port)
+  http.use_ssl = (url.scheme == 'https')
+  response = http.request(req)
+  result = JSON.parse(response.body)
+  repos = RepoModule.get_trainable_params(result['items'])
+
+  suggested_repos = repos.delete_if do |repo|
     true if repo[:description].nil?
 
     stop_words_filter = Stopwords::Filter.new STOP_WORDS
     token = stop_words_filter.filter(repo[:description])
     token.push(repo[:language]) unless repo[:language].nil?
     would_star = nbayes.classify(token) unless token.empty?
-    would_star[true] >= 0.51 
+    would_star[false] >= 0.51 
   end
-  puts repos
-  # puts 'More suggestions?'
-  suggestions = 'n'
-  # suggestions = gets.strip
-  # next_page = repos_response['Link'] =~ /next/
-  # current_url = repos_response['Link'].split(';').first.tr('<>', '') if next_page
+
+  suggested_repos.each do |repo|
+    RepoModule.user_response_on(repo)
+    text_array = repo[:description]
+    text_array.push(repo[:language]) unless repo[:language].nil?
+
+    nbayes.train(text_array, repo[:would_star])
+  end
+
+  print 'More suggestions?: '
+  suggestions = gets.strip
+  current_url = response['Link'] =~ /next/ ? response['Link'].split(';').first.tr('<>', '') : nil
 end
 

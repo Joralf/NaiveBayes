@@ -37,7 +37,7 @@ module HelperModule
     cli = HighLine.new
     username = cli.ask("What's your GitHub handle?") { |q| q.default = "RobPando" }
     year = cli.ask("From what year would you like to include repos?") { |q| q.default = 2017 }
-    stars = cli.ask("How many stars should a repo have?") { |q| q.default = 10000 }
+    stars = cli.ask("How many stars should a repo have?") { |q| q.default = 500 }
 
     return [username, year, stars]
   end
