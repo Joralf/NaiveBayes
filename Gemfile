@@ -5,3 +5,4 @@ source "https://rubygems.org"
 gem "nbayes"
 gem 'stopwords-filter', require: 'stopwords'
 gem "pry"
+gem "highline"
